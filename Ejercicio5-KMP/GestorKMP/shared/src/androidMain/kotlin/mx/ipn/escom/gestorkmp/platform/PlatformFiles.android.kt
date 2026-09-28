@@ -12,3 +12,8 @@ actual val platformFileSystem: FileSystem = FileSystem.SYSTEM
 
 actual fun appRootDirectory(): String =
     AndroidContext.context.filesDir.absolutePath
+
+actual fun preferencesFilePath(): String =
+    AndroidContext.context.noBackupFilesDir
+        .resolve("gestor.preferences_pb")
+        .absolutePath

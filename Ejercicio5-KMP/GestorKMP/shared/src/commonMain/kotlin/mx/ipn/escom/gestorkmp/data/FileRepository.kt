@@ -17,6 +17,7 @@ class FileRepository(
     private val fs: FileSystem = platformFileSystem
 ) {
     val rootPath: Path = appRootDirectory().toPath()
+    fun exists(path: Path): Boolean = fs.exists(path)
 
     /** Lista el contenido de una carpeta: primero carpetas, luego archivos, por nombre. */
     suspend fun list(dir: Path): List<FileItem> = withContext(Dispatchers.IO) {

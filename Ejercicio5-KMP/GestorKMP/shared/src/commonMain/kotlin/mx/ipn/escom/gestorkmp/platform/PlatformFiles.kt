@@ -14,3 +14,10 @@ expect val platformFileSystem: FileSystem
  * iOS: carpeta Documents del contenedor de la app.
  */
 expect fun appRootDirectory(): String
+
+/**
+ * Ruta del archivo de preferencias de DataStore.
+ * Se guarda FUERA de la carpeta raíz para que el usuario no lo vea ni lo borre.
+ * Android: noBackupFilesDir. iOS: carpeta Library.
+ */
+expect fun preferencesFilePath(): String
