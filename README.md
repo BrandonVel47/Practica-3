@@ -32,12 +32,13 @@ Se seleccionó la PC de Velazquez Beltran Brandon como el equipo anfitrión para
 Se clonó el repositorio oficial `MacOS-Docker` y se configuró la integración de Docker Desktop con WSL utilizando la distribución Ubuntu. Se habilitó la virtualización anidada en el archivo `.wslconfig` y se instalaron las dependencias de KVM (`qemu-system-x86`, `libvirt`, `x11-apps`, etc.). El contenedor se inicializó asignando 16 GB de RAM y 6 núcleos del procesador Ryzen 7 para asegurar un rendimiento óptimo de la máquina virtual.
 
 ### 1.4 Configuración del entorno de desarrollo iOS
-*[Pendiente: Describir la instalación de Xcode, configuración de simuladores y ejecución del proyecto de prueba en Swift]*
+Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperación para formatear el disco raíz virtual de QEMU (270 GB) utilizando el esquema GUID Partition Map y el formato APFS. Posteriormente, se inició la instalación formal de macOS Ventura sobre el nuevo disco asignado.
 
 ### 1.5 Entregables del Ejercicio 1
 * [x] Capturas de especificaciones comparativas de hardware.
 * [x] Evidencia de la reunión de trabajo conjunta.
 * [x] Capturas de instalación de dependencias KVM y ejecución en terminal WSL.
+* [x] Capturas del proceso de formateo e inicio de instalación de macOS.
 * [ ] Capturas del entorno macOS funcionando y acceso a internet en Safari.
 * [ ] Captura de Xcode instalado y proyecto Swift ejecutándose en el simulador.
 
