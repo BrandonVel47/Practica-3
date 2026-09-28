@@ -22,7 +22,7 @@ Se seleccionó la PC de Velazquez Beltran Brandon como el equipo anfitrión para
 * **CPU:** Intel Core i5-1135G7
 * **RAM:** 16GB DDR4
 * **Almacenamiento:** 512GB SSD
-* **GPU:** 
+* **GPU:** NVIDIA GeForce MX350
 
 ### 1.2 Bitácora de sesiones
 * **Sesión 1:** 27-09-2026 - Inicio: 4:15 - Modalidad: Remota - Integrante: Brandon Velazquez  - Actividad: Configuración de hardware y clonación de repositorio Docker.
