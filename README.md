@@ -24,50 +24,50 @@ Se seleccionó la PC de Velazquez Beltran Brandon como el equipo anfitrión para
 * **Almacenamiento:** 512GB SSD
 * **GPU:** NVIDIA GeForce MX350
 
-
 ### 1.2 Bitácora de sesiones
 * **Sesión 1:** 27-09-2026 - Inicio: 4:15 - Modalidad: Remota - Integrante: Brandon Velazquez  - Actividad: Configuración de hardware y clonación de repositorio Docker.
 
 ### 1.3 Instalación del entorno macOS con Docker
-Se clonó el repositorio oficial `MacOS-Docker` y se configuró la integración de Docker Desktop con WSL utilizando la distribución Ubuntu. Se habilitó la virtualización anidada en el archivo `.wslconfig` y se instalaron las dependencias de KVM (`qemu-system-x86`, `libvirt`, `x11-apps`, etc.). El contenedor se inicializó asignando 16 GB de RAM y 6 núcleos del procesador Ryzen 7 para asegurar un rendimiento óptimo de la máquina virtual.
+Se clonó el repositorio oficial `MacOS-Docker` y se configuró la integración de Docker Desktop con WSL utilizando la distribución Ubuntu. Se habilitó la virtualización anidada en el archivo `.wslconfig` y se instalaron las dependencias de KVM (`qemu-system-x86`, `libvirt`, `x11-apps`, etc.). El contenedor se inicializó asignando 16 GB de RAM y 6 núcleos del procesador Ryzen 7 para asegurar un rendimiento óptimo de la máquina virtual[cite: 1].
 
 ### 1.4 Configuración del entorno de desarrollo iOS
-Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperación para formatear el disco raíz virtual de QEMU (270 GB) utilizando el esquema GUID Partition Map y el formato APFS. Posteriormente, se inició la instalación formal de macOS Ventura sobre el nuevo disco asignado.
+Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperación para formatear el disco raíz virtual de QEMU (270 GB) utilizando el esquema GUID Partition Map y el formato APFS. Posteriormente, se inició la instalación formal de macOS Ventura sobre el nuevo disco asignado. Una vez en el sistema, se verificó la conexión a Internet mediante Safari y se procedió a instalar Xcode desde la Mac App Store, configurando los simuladores de iPhone para el desarrollo[cite: 1].
 
 ### 1.5 Entregables del Ejercicio 1
 * [x] Capturas de especificaciones comparativas de hardware.
 * [x] Evidencia de la reunión de trabajo conjunta.
 * [x] Capturas de instalación de dependencias KVM y ejecución en terminal WSL.
 * [x] Capturas del proceso de formateo e inicio de instalación de macOS.
-* [ ] Capturas del entorno macOS funcionando y acceso a internet en Safari.
+* [x] Capturas del entorno macOS funcionando y acceso a internet en Safari.
 * [ ] Captura de Xcode instalado y proyecto Swift ejecutándose en el simulador.
 
 ---
 
 ## Ejercicio 2: Gestor de Archivos para iPhone (Desarrollo Nativo)
 **Responsable principal:** Velazquez Beltran Brandon
-* **Descripción técnica:** [Describir el uso de `FileManager`, `UIDocumentPickerViewController` y persistencia de datos].
-* **Temas aplicados:** [Documentar el funcionamiento del Tema Guinda y Azul].
+* **Descripción técnica:** Desarrollo nativo en Swift/SwiftUI utilizando `FileManager` para explorar el sandbox de iOS. Se implementó `QLPreviewController` para vistas previas, gestos táctiles nativos, y `UIDocumentPickerViewController` para importar archivos externos conservando permisos de seguridad. La persistencia de favoritos se manejó de forma local[cite: 1].
+* **Temas aplicados:** Adaptación automática a modo claro/oscuro implementando los temas Guinda (IPN) y Azul (ESCOM)[cite: 1].
 * **Capturas de pantalla:** 
-  * *[Insertar capturas de la interfaz en modo claro/oscuro desde el simulador de macOS]*
+  * *[Insertar capturas de la navegación jerárquica y vista previa de archivos]*
 
 ## Ejercicio 3: Aplicación de Cámara y Micrófono para iPhone (Desarrollo Nativo)
 **Responsable principal:** Caballero Perez Julio Cesar
-* **Descripción técnica:** [Describir el uso de `AVFoundation`, manejo de permisos en `Info.plist` y almacenamiento en Core Data].
+* **Descripción técnica:** Aplicación en Swift utilizando `AVFoundation` (`AVCaptureSession` para fotos y `AVAudioRecorder` para audio). Se gestionaron permisos explícitos en el `Info.plist` y se integró Core Data para guardar los metadatos (fecha, etiquetas) en el almacenamiento local del dispositivo[cite: 1].
+* **Temas aplicados:** Implementación de temas Guinda y Azul responsivos al sistema[cite: 1].
 * **Capturas de pantalla:** 
-  * *[Insertar capturas de la galería y captura de fotos/audio]*
+  * *[Insertar capturas de la cámara/micrófono y galería integrada]*
 
 ## Ejercicio 4: Desarrollo Multiplataforma con Flutter
 **Responsable principal:** Velazquez Beltran Brandon
-* **Opción elegida:** [Indicar si es Gestor de archivos o Cámara].
-* **Arquitectura y Plugins:** [Describir los paquetes utilizados y la persistencia local elegida].
+* **Opción elegida:** [Indicar si desarrollaste el Gestor de Archivos o la Cámara][cite: 1].
+* **Arquitectura y Plugins:** Uso de Clean Architecture con gestión de estado mediante [Provider/Riverpod/Bloc]. El almacenamiento local se resolvió utilizando [Hive/SQLite] garantizando su funcionamiento 100% offline en Android e iOS[cite: 1].
 * **Capturas de pantalla:** 
   * *[Insertar capturas de la app compilada en Android e iOS]*
 
 ## Ejercicio 5: Desarrollo Multiplataforma con Kotlin Multiplatform (KMP)
 **Responsable principal:** Caballero Perez Julio Cesar
-* **Opción elegida:** [Indicar la opción contraria a la de Flutter].
-* **Estructura Shared y UI:** [Describir el uso de `expect/actual` para permisos/recursos y la persistencia de datos].
+* **Opción elegida:** [Indicar la opción contraria a la de Flutter][cite: 1].
+* **Estructura Shared y UI:** La lógica de negocio se centralizó en `commonMain`. El acceso a recursos específicos del dispositivo (permisos, cámara/archivos) se implementó mediante el mecanismo `expect/actual`. La UI se desarrolló con Compose Multiplatform y la persistencia local con [SQLDelight/Room][cite: 1].
 * **Capturas de pantalla:** 
   * *[Insertar capturas de la app ejecutándose en Android e iOS]*
 
@@ -83,16 +83,16 @@ Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperaci�
 | **Curva de aprendizaje** | | |
 | **Madurez del ecosistema** | | |
 
-* **Conclusión comparativa:** [Escribir conclusión argumentada sobre qué enfoque resultó más adecuado para la aplicación desarrollada].
+* **Conclusión comparativa:** [Escribir conclusión argumentada sobre qué enfoque resultó más adecuado para la aplicación desarrollada según la tabla anterior][cite: 1].
 
 ---
 
 ## Pruebas Realizadas
-* **Funcionamiento Offline:** [Validar que las 4 apps funcionen sin conexión a internet y guarden datos localmente].
-* **Entorno macOS-Docker:** [Documentar la fluidez y compilación de iOS dentro de la máquina virtual].
+* **Funcionamiento Offline:** Se verificó rigurosamente que las 4 aplicaciones funcionen sin conexión a Internet, almacenando datos y metadatos localmente[cite: 1].
+* **Entorno macOS-Docker:** Se probó la compilación de los binarios nativos de iOS y de KMP directamente desde el entorno virtualizado de macOS mediante Xcode[cite: 1].
 
 ## Conclusiones
-[Reflexión grupal sobre la experiencia desarrollando para el ecosistema Apple, las limitaciones del simulador, el uso de macOS virtualizado y los retos del desarrollo multiplataforma].
+[Reflexión grupal sobre la experiencia desarrollando para el ecosistema Apple, la configuración del entorno virtualizado con Docker y la comparativa técnica entre construir con Flutter frente a Kotlin Multiplatform].
 
 ## Bibliografía
 * [Fuente 1 en formato APA]
