@@ -21,6 +21,7 @@ data class BrowserState(
     val items: List<FileItem> = emptyList(), // ya filtrados y ordenados
     val query: String = "",
     val orden: SortOrder = SortOrder.NOMBRE,
+    val abierto: FileItem? = null,           // archivo mostrado en el visor
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -55,10 +56,16 @@ class FileBrowserViewModel(
         }
     }
 
-    // ---------- Navegación ----------
+    // ---------- Navegación y apertura ----------
 
-    fun openFolder(item: FileItem) {
+    /** Carpeta: entra en ella. Archivo: lo abre en el visor. */
+    fun abrir(item: FileItem) {
         if (item.isDirectory) navegarA(item.path.toPath())
+        else _state.update { it.copy(abierto = item) }
+    }
+
+    fun cerrarVisor() {
+        _state.update { it.copy(abierto = null) }
     }
 
     fun goUp() {
@@ -78,6 +85,12 @@ class FileBrowserViewModel(
         }
     }
 
+    // ---------- Lectura para los visores ----------
+
+    suspend fun leerTexto(item: FileItem): String = repo.readText(item.path.toPath())
+
+    suspend fun leerBytes(item: FileItem): ByteArray = repo.readBytes(item.path.toPath())
+
     // ---------- Búsqueda y orden ----------
 
     fun setQuery(texto: String) {
@@ -92,14 +105,20 @@ class FileBrowserViewModel(
     // ---------- Operaciones ----------
 
     fun createFolder(name: String) {
-        val limpio = name.trim()
-        if (limpio.isEmpty() || limpio.contains('/') || limpio.contains('\\')) {
-            showError("Nombre de carpeta no válido")
-            return
-        }
+        val limpio = validarNombre(name) ?: return
         viewModelScope.launch {
             runCatching { repo.createFolder(current, limpio) }
                 .onFailure { showError("No se pudo crear la carpeta (¿ya existe?)") }
+            load()
+        }
+    }
+
+    fun rename(item: FileItem, nuevoNombre: String) {
+        val limpio = validarNombre(nuevoNombre) ?: return
+        if (limpio == item.name) return
+        viewModelScope.launch {
+            runCatching { repo.rename(item.path.toPath(), limpio) }
+                .onFailure { showError(it.message ?: "No se pudo renombrar") }
             load()
         }
     }
@@ -118,6 +137,18 @@ class FileBrowserViewModel(
 
     private fun showError(msg: String) {
         _state.update { it.copy(error = msg) }
+    }
+
+    /** Devuelve el nombre limpio o null (y muestra error) si no es válido. */
+    private fun validarNombre(nombre: String): String? {
+        val limpio = nombre.trim()
+        if (limpio.isEmpty() || limpio.contains('/') || limpio.contains('\\') ||
+            limpio == "." || limpio == ".."
+        ) {
+            showError("Nombre no válido")
+            return null
+        }
+        return limpio
     }
 
     // ---------- Internos ----------

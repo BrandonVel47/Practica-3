@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.ipn.escom.gestorkmp.data.FileItem
 import mx.ipn.escom.gestorkmp.data.SortOrder
 import mx.ipn.escom.gestorkmp.ui.theme.AppTheme
+import mx.ipn.escom.gestorkmp.ui.viewer.FileViewerScreen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,7 +48,21 @@ fun FileBrowserScreen(
     viewModel: FileBrowserViewModel = viewModel { FileBrowserViewModel() }
 ) {
     val state by viewModel.state.collectAsState()
+
+    // Si hay un archivo abierto, mostramos el visor en lugar de la lista
+    state.abierto?.let { archivo ->
+        FileViewerScreen(
+            item = archivo,
+            onBack = viewModel::cerrarVisor,
+            cargarTexto = viewModel::leerTexto,
+            cargarBytes = viewModel::leerBytes
+        )
+        return
+    }
+
     var mostrarNuevaCarpeta by remember { mutableStateOf(false) }
+    var opcionesDe by remember { mutableStateOf<FileItem?>(null) }
+    var porRenombrar by remember { mutableStateOf<FileItem?>(null) }
     var porEliminar by remember { mutableStateOf<FileItem?>(null) }
     var buscando by remember { mutableStateOf(false) }
     var menuOrden by remember { mutableStateOf(false) }
@@ -72,13 +87,11 @@ fun FileBrowserScreen(
                     }
                 },
                 actions = {
-                    // Buscar
                     TextButton(onClick = {
                         buscando = !buscando
                         if (!buscando) viewModel.setQuery("")
                     }) { Text("🔍") }
 
-                    // Ordenar
                     Box {
                         TextButton(onClick = { menuOrden = true }) { Text("⇅") }
                         DropdownMenu(
@@ -99,7 +112,6 @@ fun FileBrowserScreen(
                         }
                     }
 
-                    // Tema
                     TextButton(onClick = onCambiarTema) {
                         Text(if (temaActual == AppTheme.GUINDA) "Azul" else "Guinda")
                     }
@@ -151,8 +163,8 @@ fun FileBrowserScreen(
                         items(state.items, key = { it.path }) { item ->
                             FileRow(
                                 item = item,
-                                onClick = { viewModel.openFolder(item) },
-                                onLongClick = { porEliminar = item }
+                                onClick = { viewModel.abrir(item) },
+                                onLongClick = { opcionesDe = item }
                             )
                             HorizontalDivider()
                         }
@@ -162,7 +174,34 @@ fun FileBrowserScreen(
         }
     }
 
-    // Diálogo: nueva carpeta
+    // ---------- Diálogo: opciones (mantener presionado) ----------
+    opcionesDe?.let { item ->
+        AlertDialog(
+            onDismissRequest = { opcionesDe = null },
+            title = { Text("${item.type.icono}  ${item.name}") },
+            text = {
+                Column {
+                    TextButton(onClick = {
+                        opcionesDe = null
+                        viewModel.abrir(item)
+                    }) { Text("Abrir") }
+                    TextButton(onClick = {
+                        opcionesDe = null
+                        porRenombrar = item
+                    }) { Text("Renombrar") }
+                    TextButton(onClick = {
+                        opcionesDe = null
+                        porEliminar = item
+                    }) { Text("Eliminar", color = MaterialTheme.colorScheme.error) }
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { opcionesDe = null }) { Text("Cerrar") }
+            }
+        )
+    }
+
+    // ---------- Diálogo: nueva carpeta ----------
     if (mostrarNuevaCarpeta) {
         var nombre by remember { mutableStateOf("") }
         AlertDialog(
@@ -191,7 +230,36 @@ fun FileBrowserScreen(
         )
     }
 
-    // Diálogo: confirmar eliminación
+    // ---------- Diálogo: renombrar ----------
+    porRenombrar?.let { item ->
+        var nombre by remember(item) { mutableStateOf(item.name) }
+        AlertDialog(
+            onDismissRequest = { porRenombrar = null },
+            title = { Text("Renombrar") },
+            text = {
+                OutlinedTextField(
+                    value = nombre,
+                    onValueChange = { nombre = it },
+                    label = { Text("Nuevo nombre") },
+                    singleLine = true
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = nombre.isNotBlank(),
+                    onClick = {
+                        viewModel.rename(item, nombre)
+                        porRenombrar = null
+                    }
+                ) { Text("Guardar") }
+            },
+            dismissButton = {
+                TextButton(onClick = { porRenombrar = null }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // ---------- Diálogo: confirmar eliminación ----------
     porEliminar?.let { item ->
         AlertDialog(
             onDismissRequest = { porEliminar = null },
@@ -214,7 +282,7 @@ fun FileBrowserScreen(
         )
     }
 
-    // Diálogo: errores
+    // ---------- Diálogo: errores ----------
     state.error?.let { mensaje ->
         AlertDialog(
             onDismissRequest = viewModel::clearError,

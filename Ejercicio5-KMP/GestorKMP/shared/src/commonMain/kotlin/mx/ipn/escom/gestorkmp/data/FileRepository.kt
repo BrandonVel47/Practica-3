@@ -17,6 +17,7 @@ class FileRepository(
     private val fs: FileSystem = platformFileSystem
 ) {
     val rootPath: Path = appRootDirectory().toPath()
+
     fun exists(path: Path): Boolean = fs.exists(path)
 
     /** Lista el contenido de una carpeta: primero carpetas, luego archivos, por nombre. */
@@ -35,6 +36,21 @@ class FileRepository(
         )
     }
 
+    /** Lee un archivo de texto (máximo 1 MB para no saturar la memoria). */
+    suspend fun readText(path: Path, maxBytes: Long = 1_000_000): String =
+        withContext(Dispatchers.IO) {
+            val size = fs.metadataOrNull(path)?.size ?: 0L
+            if (size > maxBytes) {
+                error("El archivo es demasiado grande para mostrarse (${size / 1024} KB)")
+            }
+            fs.read(path) { readUtf8() }
+        }
+
+    /** Lee un archivo completo como bytes (para imágenes). */
+    suspend fun readBytes(path: Path): ByteArray = withContext(Dispatchers.IO) {
+        fs.read(path) { readByteArray() }
+    }
+
     suspend fun createFolder(parent: Path, name: String) = withContext(Dispatchers.IO) {
         fs.createDirectory(parent / name, mustCreate = true)
     }
@@ -45,7 +61,9 @@ class FileRepository(
 
     suspend fun rename(path: Path, newName: String) = withContext(Dispatchers.IO) {
         val parent = path.parent ?: error("No se puede renombrar la raíz")
-        fs.atomicMove(path, parent / newName)
+        val destino = parent / newName
+        if (fs.exists(destino)) error("Ya existe un elemento llamado \"$newName\"")
+        fs.atomicMove(path, destino)
     }
 
     /** Crea contenido de ejemplo la primera vez, para no ver la app vacía. */
