@@ -162,7 +162,7 @@ private fun ImageViewer(item: FileItem, cargar: suspend (FileItem) -> ByteArray)
                             rotationZ = rotacion
                             translationX = desplazamiento.x
                             translationY = desplazamiento.y
-                        }
+                        }dir C:\fotos
                 )
 
                 Row(
