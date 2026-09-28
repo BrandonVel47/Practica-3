@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.PreferenceDataStoreFactory
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
+import androidx.datastore.preferences.core.stringSetPreferencesKey
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -30,7 +31,10 @@ object AppDataStore {
     }
 }
 
-/** Preferencias de la sesión: tema, orden y última carpeta visitada. */
+/**
+ * Preferencias persistentes: tema, orden, última carpeta,
+ * favoritos y archivos recientes.
+ */
 class PreferencesRepository(
     private val ds: DataStore<Preferences> = AppDataStore.instance
 ) {
@@ -38,7 +42,13 @@ class PreferencesRepository(
         val TEMA = stringPreferencesKey("tema")
         val ORDEN = stringPreferencesKey("orden")
         val ULTIMA_CARPETA = stringPreferencesKey("ultima_carpeta")
+        val FAVORITOS = stringSetPreferencesKey("favoritos")
+        val RECIENTES = stringPreferencesKey("recientes") // rutas separadas por salto de línea
     }
+
+    private val maxRecientes = 20
+
+    // ---------- Tema, orden y última carpeta ----------
 
     /** Nombre del tema guardado (GUINDA / AZUL) o null si nunca se eligió. */
     val tema: Flow<String?> = ds.data.map { it[Keys.TEMA] }
@@ -60,4 +70,45 @@ class PreferencesRepository(
     suspend fun guardarUltimaCarpeta(ruta: String) {
         ds.edit { it[Keys.ULTIMA_CARPETA] = ruta }
     }
+
+    // ---------- Favoritos ----------
+
+    val favoritos: Flow<Set<String>> = ds.data.map { it[Keys.FAVORITOS] ?: emptySet() }
+
+    suspend fun alternarFavorito(ruta: String) {
+        ds.edit { prefs ->
+            val actuales = prefs[Keys.FAVORITOS] ?: emptySet()
+            prefs[Keys.FAVORITOS] = if (ruta in actuales) actuales - ruta else actuales + ruta
+        }
+    }
+
+    suspend fun quitarFavorito(ruta: String) {
+        ds.edit { prefs ->
+            prefs[Keys.FAVORITOS] = (prefs[Keys.FAVORITOS] ?: emptySet()) - ruta
+        }
+    }
+
+    // ---------- Recientes (el más nuevo primero) ----------
+
+    val recientes: Flow<List<String>> = ds.data.map { leerRecientes(it) }
+
+    suspend fun registrarReciente(ruta: String) {
+        ds.edit { prefs ->
+            val lista = listOf(ruta) + leerRecientes(prefs).filter { it != ruta }
+            prefs[Keys.RECIENTES] = lista.take(maxRecientes).joinToString("\n")
+        }
+    }
+
+    suspend fun quitarReciente(ruta: String) {
+        ds.edit { prefs ->
+            prefs[Keys.RECIENTES] = leerRecientes(prefs).filter { it != ruta }.joinToString("\n")
+        }
+    }
+
+    suspend fun limpiarRecientes() {
+        ds.edit { it.remove(Keys.RECIENTES) }
+    }
+
+    private fun leerRecientes(prefs: Preferences): List<String> =
+        prefs[Keys.RECIENTES]?.split('\n')?.filter { it.isNotBlank() } ?: emptyList()
 }

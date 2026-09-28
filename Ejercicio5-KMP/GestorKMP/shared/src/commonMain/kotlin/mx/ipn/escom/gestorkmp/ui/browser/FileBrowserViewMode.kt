@@ -11,17 +11,34 @@ import mx.ipn.escom.gestorkmp.data.FileItem
 import mx.ipn.escom.gestorkmp.data.FileRepository
 import mx.ipn.escom.gestorkmp.data.PreferencesRepository
 import mx.ipn.escom.gestorkmp.data.SortOrder
+import mx.ipn.escom.gestorkmp.platform.mimeTypeDe
+import mx.ipn.escom.gestorkmp.platform.shareFile
 import okio.Path
 import okio.Path.Companion.toPath
 
+/** Pestañas de la barra inferior. */
+enum class Pestana(val etiqueta: String, val icono: String) {
+    ARCHIVOS("Archivos", "📂"),
+    FAVORITOS("Favoritos", "⭐"),
+    RECIENTES("Recientes", "🕘")
+}
+
+/** Elemento marcado para copiar o mover. */
+data class Portapapeles(val item: FileItem, val mover: Boolean)
+
 /** Estado que observa la pantalla. */
 data class BrowserState(
+    val pestana: Pestana = Pestana.ARCHIVOS,
     val rutaVisible: String = "Inicio",
     val isRoot: Boolean = true,
-    val items: List<FileItem> = emptyList(), // ya filtrados y ordenados
+    val items: List<FileItem> = emptyList(),      // carpeta actual, filtrada y ordenada
+    val favoritos: List<FileItem> = emptyList(),
+    val recientes: List<FileItem> = emptyList(),
+    val favoritosPaths: Set<String> = emptySet(),
     val query: String = "",
     val orden: SortOrder = SortOrder.NOMBRE,
-    val abierto: FileItem? = null,           // archivo mostrado en el visor
+    val abierto: FileItem? = null,                // archivo mostrado en el visor
+    val portapapeles: Portapapeles? = null,
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -36,6 +53,8 @@ class FileBrowserViewModel(
 
     private var current: Path = repo.rootPath
     private var todos: List<FileItem> = emptyList()
+    private var favPaths: Set<String> = emptySet()
+    private var recPaths: List<String> = emptyList()
 
     init {
         viewModelScope.launch {
@@ -47,21 +66,35 @@ class FileBrowserViewModel(
             }
             load()
         }
-        // Observar el criterio de orden guardado
         viewModelScope.launch {
             prefs.orden.collect { orden ->
                 _state.update { it.copy(orden = orden) }
                 publicar()
             }
         }
+        viewModelScope.launch {
+            prefs.favoritos.collect { favPaths = it; resolverListas() }
+        }
+        viewModelScope.launch {
+            prefs.recientes.collect { recPaths = it; resolverListas() }
+        }
     }
 
-    // ---------- Navegación y apertura ----------
+    // ---------- Pestañas, navegación y apertura ----------
 
-    /** Carpeta: entra en ella. Archivo: lo abre en el visor. */
+    fun setPestana(pestana: Pestana) {
+        _state.update { it.copy(pestana = pestana) }
+    }
+
+    /** Carpeta: entra en ella. Archivo: lo abre en el visor y lo registra en recientes. */
     fun abrir(item: FileItem) {
-        if (item.isDirectory) navegarA(item.path.toPath())
-        else _state.update { it.copy(abierto = item) }
+        if (item.isDirectory) {
+            setPestana(Pestana.ARCHIVOS)
+            navegarA(item.path.toPath())
+        } else {
+            _state.update { it.copy(abierto = item) }
+            viewModelScope.launch { prefs.registrarReciente(item.path) }
+        }
     }
 
     fun cerrarVisor() {
@@ -90,6 +123,66 @@ class FileBrowserViewModel(
     suspend fun leerTexto(item: FileItem): String = repo.readText(item.path.toPath())
 
     suspend fun leerBytes(item: FileItem): ByteArray = repo.readBytes(item.path.toPath())
+
+    // ---------- Favoritos y recientes ----------
+
+    fun alternarFavorito(item: FileItem) {
+        viewModelScope.launch { prefs.alternarFavorito(item.path) }
+    }
+
+    fun limpiarRecientes() {
+        viewModelScope.launch { prefs.limpiarRecientes() }
+    }
+
+    // ---------- Copiar / mover ----------
+
+    fun copiar(item: FileItem) = marcar(item, mover = false)
+
+    fun mover(item: FileItem) = marcar(item, mover = true)
+
+    private fun marcar(item: FileItem, mover: Boolean) {
+        _state.update { it.copy(portapapeles = Portapapeles(item, mover), pestana = Pestana.ARCHIVOS) }
+    }
+
+    fun cancelarPortapapeles() {
+        _state.update { it.copy(portapapeles = null) }
+    }
+
+    /** Pega el elemento marcado en la carpeta actual. */
+    fun pegar() {
+        val p = _state.value.portapapeles ?: return
+        viewModelScope.launch {
+            runCatching {
+                val origen = p.item.path.toPath()
+                if (p.mover) repo.move(origen, current) else repo.copy(origen, current)
+            }.onSuccess {
+                _state.update { it.copy(portapapeles = null) }
+            }.onFailure {
+                showError(it.message ?: "No se pudo completar la operación")
+            }
+            load()
+        }
+    }
+
+    // ---------- Importar y compartir ----------
+
+    /** Ruta libre en la carpeta actual para un archivo importado. */
+    fun rutaParaImportar(nombreOriginal: String): String =
+        repo.rutaDisponible(current, nombreOriginal).toString()
+
+    fun onImportado(resultado: Result<String>) {
+        resultado.onFailure { showError("No se pudo importar: ${it.message}") }
+        refresh()
+    }
+
+    fun compartir(item: FileItem) {
+        if (item.isDirectory) {
+            showError("Solo se pueden compartir archivos, no carpetas")
+            return
+        }
+        runCatching { shareFile(item.path, mimeTypeDe(item.name)) }
+            .onFailure { showError("No se pudo compartir: ${it.message}") }
+    }
 
     // ---------- Búsqueda y orden ----------
 
@@ -126,6 +219,10 @@ class FileBrowserViewModel(
     fun delete(item: FileItem) {
         viewModelScope.launch {
             runCatching { repo.delete(item.path.toPath()) }
+                .onSuccess {
+                    prefs.quitarFavorito(item.path)
+                    prefs.quitarReciente(item.path)
+                }
                 .onFailure { showError("No se pudo eliminar: ${it.message}") }
             load()
         }
@@ -172,6 +269,16 @@ class FileBrowserViewModel(
                     it.copy(isLoading = false, error = "No se pudo abrir la carpeta: ${e.message}")
                 }
             }
+        // Por si algo se renombró, movió o eliminó
+        resolverListas()
+    }
+
+    /** Convierte las rutas guardadas en elementos reales, descartando los que ya no existen. */
+    private suspend fun resolverListas() {
+        val favs = favPaths.mapNotNull { repo.info(it.toPath()) }
+            .sortedWith(compareByDescending<FileItem> { it.isDirectory }.thenBy { it.name.lowercase() })
+        val recs = recPaths.mapNotNull { repo.info(it.toPath()) }
+        _state.update { it.copy(favoritos = favs, recientes = recs, favoritosPaths = favPaths) }
     }
 
     /** Aplica búsqueda y orden sobre la lista completa y publica el resultado. */
