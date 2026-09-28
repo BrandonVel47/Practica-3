@@ -1,11 +1,11 @@
 # Práctica 3: Aplicaciones Nativas
 
 **Datos de Identificación**
-* **Materia**: Desarrollo de Aplicaciones Móviles Nativas[cite: 5]
-* **Profesor**: Hurtado Avilés Gabriel[cite: 5]
-* **Equipo**: Caballero Perez Julio Cesar y Velazquez Beltran Brandon[cite: 5]
-* **Boletas**: 2023630158 y 2023630925[cite: 5]
-* **Grupo**: 7CV4[cite: 5]
+* **Materia**: Desarrollo de Aplicaciones Móviles Nativas
+* **Profesor**: Hurtado Avilés Gabriel
+* **Equipo**: Caballero Perez Julio Cesar y Velazquez Beltran Brandon
+* **Boletas**: 2023630158 y 2023630925
+* **Grupo**: 7CV4
 
 ## Ejercicio 1: Instalación de iOS/macOS en la Mejor PC del Equipo
 
