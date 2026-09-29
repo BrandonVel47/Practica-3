@@ -45,29 +45,40 @@ Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperaci�
 
 ## Ejercicio 2: Gestor de Archivos para iPhone (Desarrollo Nativo)
 **Responsable principal:** Velazquez Beltran Brandon
-- **Descripción técnica:** Desarrollo nativo en Swift/SwiftUI utilizando `FileManager` para explorar el sandbox de iOS. Se implementó `QLPreviewController` para vistas previas, gestos táctiles nativos, y `UIDocumentPickerViewController` para importar archivos externos conservando permisos de seguridad. La persistencia de favoritos se manejó de forma local.
-- **Temas aplicados:** Adaptación automática a modo claro/oscuro implementando los temas Guinda (IPN) y Azul (ESCOM).
-- **Capturas de pantalla:** 
-  * *[Insertar capturas de la navegación jerárquica y vista previa de archivos]*
+- **Descripción técnica:** Desarrollo nativo en Swift/SwiftUI utilizando `FileManager` para explorar de manera segura y persistente el directorio de documentos (*Sandbox*) de iOS. Se implementó `UIDocumentPickerViewController` mediante el modificador `.fileImporter` con manejo de recursos de seguridad (*security-scoped bookmarks*) para importar archivos externos. La previsualización de documentos se resolvió encapsulando `QLPreviewController` a través del protocolo `UIViewControllerRepresentable`. La gestión incluyó gestos táctiles nativos como desplazamiento para eliminar (*swipe to delete*) y menús contextuales para invocar la hoja de compartir nativa del sistema con `UIActivityViewController`.
+- **Temas aplicados:** Adaptación automática a modo claro y oscuro del sistema operativo configurando catálogos de activos (*Assets.xcassets*) con variantes *Any, Light, Dark* para el **Tema Guinda (IPN)** (`#6C1D45` / `#8A2558`) y el **Tema Azul (ESCOM)** (`#005E90` / `#4A90E2`), controlados mediante persistencia con `@AppStorage`.
+- **Evidencias y Capturas de pantalla:** 
+  * `ej2_fase1_importacion_sandbox.png`: Importación exitosa y renderizado del archivo de prueba en la lista principal del sandbox.
+  * `ej2_fase2_qlpreview_nativo.png`: Visualización a pantalla completa mediante el componente QuickLook.
+  * `ej2_tema_guinda_claro.png` / `ej2_tema_guinda_oscuro.png`: Adaptabilidad responsiva del Tema Guinda (IPN) en modo claro y oscuro.
+  * `ej2_tema_azul_claro.png` / `ej2_tema_azul_oscuro.png`: Adaptabilidad responsiva del Tema Azul (ESCOM) en modo claro y oscuro.
+  * `ej2_fase4_uiactivityviewcontroller.png`: Invocación de la hoja nativa de compartir (*UIActivityViewController*).
+  * `ej2_fase4_swipe_delete.png`: Acceso al botón de borrado físico mediante el gesto táctil de deslizamiento (*swipe to delete*).
+
+---
 
 ## Ejercicio 3: Aplicación de Cámara y Micrófono para iPhone (Desarrollo Nativo)
 **Responsable principal:** Caballero Perez Julio Cesar
-- **Descripción técnica:** Aplicación en Swift utilizando `AVFoundation` (`AVCaptureSession` para fotos y `AVAudioRecorder` para audio). Se gestionaron permisos explícitos en el `Info.plist` y se integró Core Data para guardar los metadatos (fecha, etiquetas) en el almacenamiento local del dispositivo.
-- **Temas aplicados:** Implementación de temas Guinda y Azul responsivos al sistema.
-- **Capturas de pantalla:** 
-  * *[Insertar capturas de la cámara/micrófono y galería integrada]*
+- **Descripción técnica:** Creación de la estructura base del proyecto `CamaraMicrofonoApp` en Xcode. Se configuraron de manera obligatoria las claves institucionales de privacidad en el archivo `Info.plist` (`NSCameraUsageDescription` y `NSMicrophoneUsageDescription`)[cite: 1] para autorizar el uso de hardware. Se diseñó una interfaz multimedia interactiva dividida en secciones para selección de imágenes mediante `PhotosPicker` (como fuente alternativa adaptada para simulador)[cite: 1] y controles de simulación/grabación de audio.
+- **Temas aplicados:** Integración de los selectores de paleta institucional Guinda (IPN) y Azul (ESCOM) con soporte dinámico.
+- **Evidencias y Capturas de pantalla:** 
+  * `ej3_interfaz_principal.png`: Interfaz principal con pestañas multimedia y selector de temas responsivo.
+
+---
 
 ## Ejercicio 4: Desarrollo Multiplataforma con Flutter
 **Responsable principal:** Velazquez Beltran Brandon
-- **Opción elegida:** [Indicar si desarrollaste el Gestor de Archivos o la Cámara]
-- **Arquitectura y Plugins:** Uso de Clean Architecture con gestión de estado mediante [Provider/Riverpod/Bloc]. El almacenamiento local se resolvió utilizando [Hive/SQLite] garantizando su funcionamiento 100% offline en Android e iOS.
+- **Opción elegida:** [Pendiente de desarrollo]
+- **Arquitectura y Plugins:** Uso de Clean Architecture con gestión de estado y persistencia local 100% offline.
 - **Capturas de pantalla:** 
   * *[Insertar capturas de la app compilada en Android e iOS]*
 
+---
+
 ## Ejercicio 5: Desarrollo Multiplataforma con Kotlin Multiplatform (KMP)
 **Responsable principal:** Caballero Perez Julio Cesar
-- **Opción elegida:** [Indicar la opción contraria a la de Flutter]
-- **Estructura Shared y UI:** La lógica de negocio se centralizó en `commonMain`. El acceso a recursos específicos del dispositivo (permisos, cámara/archivos) se implementó mediante el mecanismo `expect/actual`. La UI se desarrolló con Compose Multiplatform y la persistencia local con [SQLDelight/Room].
+- **Opción elegida:** [Pendiente de desarrollo]
+- **Estructura Shared y UI:** Lógica centralizada en `commonMain` con implementación `expect/actual` para recursos de plataforma.
 - **Capturas de pantalla:** 
   * *[Insertar capturas de la app ejecutándose en Android e iOS]*
 
@@ -83,16 +94,16 @@ Se ingresó a la Utilidad de Discos (Disk Utility) desde el menú de recuperaci�
 | **Curva de aprendizaje** | | |
 | **Madurez del ecosistema** | | |
 
-- **Conclusión comparativa:** [Escribir conclusión argumentada sobre qué enfoque resultó más adecuado para la aplicación desarrollada según la tabla anterior].
+- **Conclusión comparativa:** [Pendiente de redacción final].
 
 ---
 
 ## Pruebas Realizadas
-- **Funcionamiento Offline:** Se verificó rigurosamente que las 4 aplicaciones funcionen sin conexión a Internet, almacenando datos y metadatos localmente.
-- **Entorno macOS-Docker:** Se probó la compilación de los binarios nativos de iOS y de KMP directamente desde el entorno virtualizado de macOS mediante Xcode.
+- **Funcionamiento Offline:** Se verificó rigurosamente que las aplicaciones funcionen sin conexión a Internet, almacenando datos localmente en el contenedor de la app.
+- **Entorno macOS-Docker:** Se probó la compilación de binarios nativos de iOS y la ejecución de simuladores mediante Xcode virtualizado.
 
 ## Conclusiones
-[Reflexión grupal sobre la experiencia desarrollando para el ecosistema Apple, la configuración del entorno virtualizado con Docker y la comparativa técnica entre construir con Flutter frente a Kotlin Multiplatform].
+[Pendiente de redacción grupal].
 
 ## Bibliografía
 - [Fuente 1 en formato APA]
