@@ -44,8 +44,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mx.ipn.escom.gestorkmp.data.FileItem
 import mx.ipn.escom.gestorkmp.data.FileType
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.decodeToImageBitmap
+import mx.ipn.escom.gestorkmp.platform.decodificarImagen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -112,13 +111,13 @@ private fun TextViewer(item: FileItem, cargar: suspend (FileItem) -> String) {
 
 // ---------------- Imagen ----------------
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 private fun ImageViewer(item: FileItem, cargar: suspend (FileItem) -> ByteArray) {
     val resultado by produceState<Result<ImageBitmap>?>(initialValue = null, item) {
         value = runCatching {
             val bytes = cargar(item)
-            withContext(Dispatchers.Default) { bytes.decodeToImageBitmap() }
+            // Máximo 2048 px por lado: suficiente para zoom y sin agotar la memoria
+            withContext(Dispatchers.Default) { decodificarImagen(bytes, 2048) }
         }
     }
 

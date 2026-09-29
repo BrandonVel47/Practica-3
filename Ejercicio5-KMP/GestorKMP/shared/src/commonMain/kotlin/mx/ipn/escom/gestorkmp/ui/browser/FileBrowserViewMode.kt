@@ -1,16 +1,21 @@
 package mx.ipn.escom.gestorkmp.ui.browser
 
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import mx.ipn.escom.gestorkmp.data.FileItem
 import mx.ipn.escom.gestorkmp.data.FileRepository
 import mx.ipn.escom.gestorkmp.data.PreferencesRepository
 import mx.ipn.escom.gestorkmp.data.SortOrder
+import mx.ipn.escom.gestorkmp.data.ThumbnailCache
+import mx.ipn.escom.gestorkmp.platform.decodificarImagen
 import mx.ipn.escom.gestorkmp.platform.mimeTypeDe
 import mx.ipn.escom.gestorkmp.platform.shareFile
 import okio.Path
@@ -123,6 +128,17 @@ class FileBrowserViewModel(
     suspend fun leerTexto(item: FileItem): String = repo.readText(item.path.toPath())
 
     suspend fun leerBytes(item: FileItem): ByteArray = repo.readBytes(item.path.toPath())
+
+    /** Miniatura de una imagen (160 px), usando la caché si ya existe. */
+    suspend fun miniatura(item: FileItem): ImageBitmap? {
+        ThumbnailCache.get(item)?.let { return it }
+        val imagen = runCatching {
+            val bytes = repo.readBytes(item.path.toPath())
+            withContext(Dispatchers.Default) { decodificarImagen(bytes, 160) }
+        }.getOrNull() ?: return null
+        ThumbnailCache.put(item, imagen)
+        return imagen
+    }
 
     // ---------- Favoritos y recientes ----------
 

@@ -1,6 +1,8 @@
 package mx.ipn.escom.gestorkmp.ui.browser
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,8 +11,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -26,25 +30,36 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwipeToDismissBox
+import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.rememberSwipeToDismissBoxState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import mx.ipn.escom.gestorkmp.data.FileItem
+import mx.ipn.escom.gestorkmp.data.FileType
 import mx.ipn.escom.gestorkmp.data.SortOrder
+import mx.ipn.escom.gestorkmp.platform.ManejarAtras
 import mx.ipn.escom.gestorkmp.platform.rememberFileImporter
 import mx.ipn.escom.gestorkmp.ui.theme.AppTheme
 import mx.ipn.escom.gestorkmp.ui.viewer.FileViewerScreen
@@ -57,6 +72,18 @@ fun FileBrowserScreen(
     viewModel: FileBrowserViewModel = viewModel { FileBrowserViewModel() }
 ) {
     val state by viewModel.state.collectAsState()
+
+    // Botón "atrás" del sistema (expect/actual): cierra el visor,
+    // regresa a la pestaña Archivos o sube una carpeta
+    ManejarAtras(
+        activo = state.abierto != null || state.pestana != Pestana.ARCHIVOS || !state.isRoot
+    ) {
+        when {
+            state.abierto != null -> viewModel.cerrarVisor()
+            state.pestana != Pestana.ARCHIVOS -> viewModel.setPestana(Pestana.ARCHIVOS)
+            else -> viewModel.goUp()
+        }
+    }
 
     // Si hay un archivo abierto, mostramos el visor en lugar de la lista
     state.abierto?.let { archivo ->
@@ -216,8 +243,11 @@ fun FileBrowserScreen(
                         favoritos = state.favoritosPaths,
                         cargando = state.isLoading,
                         textoVacio = if (state.query.isNotBlank()) "Sin resultados" else "Carpeta vacía",
+                        cargarMiniatura = viewModel::miniatura,
                         onClick = viewModel::abrir,
-                        onLongClick = { opcionesDe = it }
+                        onLongClick = { opcionesDe = it },
+                        onDeslizar = { porEliminar = it },
+                        onRefrescar = viewModel::refresh
                     )
 
                     // Barra para pegar lo que se copió o movió
@@ -247,8 +277,10 @@ fun FileBrowserScreen(
                     favoritos = state.favoritosPaths,
                     cargando = false,
                     textoVacio = "Aún no tienes favoritos.\nMantén presionado un archivo o carpeta\ny elige \"Añadir a favoritos\".",
+                    cargarMiniatura = viewModel::miniatura,
                     onClick = viewModel::abrir,
-                    onLongClick = { opcionesDe = it }
+                    onLongClick = { opcionesDe = it },
+                    onDeslizar = { porEliminar = it }
                 )
 
                 Pestana.RECIENTES -> ListaArchivos(
@@ -256,8 +288,10 @@ fun FileBrowserScreen(
                     favoritos = state.favoritosPaths,
                     cargando = false,
                     textoVacio = "Aún no has abierto archivos.",
+                    cargarMiniatura = viewModel::miniatura,
                     onClick = viewModel::abrir,
-                    onLongClick = { opcionesDe = it }
+                    onLongClick = { opcionesDe = it },
+                    onDeslizar = { porEliminar = it }
                 )
             }
         }
@@ -398,16 +432,41 @@ fun FileBrowserScreen(
     }
 }
 
-/** Lista reutilizable para Archivos, Favoritos y Recientes. */
+/**
+ * Lista reutilizable para Archivos, Favoritos y Recientes.
+ * - Deslizar a la izquierda = eliminar (con confirmación).
+ * - Jalar hacia abajo = actualizar (solo si se pasa onRefrescar).
+ */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun ColumnScope.ListaArchivos(
     items: List<FileItem>,
     favoritos: Set<String>,
     cargando: Boolean,
     textoVacio: String,
+    cargarMiniatura: suspend (FileItem) -> ImageBitmap?,
     onClick: (FileItem) -> Unit,
-    onLongClick: (FileItem) -> Unit
+    onLongClick: (FileItem) -> Unit,
+    onDeslizar: (FileItem) -> Unit,
+    onRefrescar: (() -> Unit)? = null
 ) {
+    val lista: @Composable () -> Unit = {
+        LazyColumn(Modifier.fillMaxSize()) {
+            items(items, key = { it.path }) { item ->
+                FilaDeslizable(onDeslizar = { onDeslizar(item) }) {
+                    FileRow(
+                        item = item,
+                        esFavorito = item.path in favoritos,
+                        cargarMiniatura = cargarMiniatura,
+                        onClick = { onClick(item) },
+                        onLongClick = { onLongClick(item) }
+                    )
+                }
+                HorizontalDivider()
+            }
+        }
+    }
+
     Box(Modifier.fillMaxWidth().weight(1f)) {
         when {
             cargando && items.isEmpty() ->
@@ -420,19 +479,43 @@ private fun ColumnScope.ListaArchivos(
                     modifier = Modifier.align(Alignment.Center).padding(24.dp)
                 )
 
-            else -> LazyColumn(Modifier.fillMaxSize()) {
-                items(items, key = { it.path }) { item ->
-                    FileRow(
-                        item = item,
-                        esFavorito = item.path in favoritos,
-                        onClick = { onClick(item) },
-                        onLongClick = { onLongClick(item) }
-                    )
-                    HorizontalDivider()
-                }
-            }
+            onRefrescar != null -> PullToRefreshBox(
+                isRefreshing = cargando,
+                onRefresh = onRefrescar,
+                modifier = Modifier.fillMaxSize()
+            ) { lista() }
+
+            else -> lista()
         }
     }
+}
+
+/** Fila que se puede deslizar a la izquierda para pedir eliminarla. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FilaDeslizable(onDeslizar: () -> Unit, contenido: @Composable () -> Unit) {
+    val onDeslizarActual by rememberUpdatedState(onDeslizar)
+    val estado = rememberSwipeToDismissBoxState(
+        confirmValueChange = { valor ->
+            if (valor == SwipeToDismissBoxValue.EndToStart) onDeslizarActual()
+            false // la fila regresa a su lugar; la eliminación se confirma en un diálogo
+        }
+    )
+    SwipeToDismissBox(
+        state = estado,
+        enableDismissFromStartToEnd = false,
+        backgroundContent = {
+            Box(
+                contentAlignment = Alignment.CenterEnd,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.colorScheme.errorContainer)
+                    .padding(horizontal = 24.dp)
+            ) {
+                Text("🗑  Eliminar", color = MaterialTheme.colorScheme.onErrorContainer)
+            }
+        }
+    ) { contenido() }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -440,6 +523,7 @@ private fun ColumnScope.ListaArchivos(
 private fun FileRow(
     item: FileItem,
     esFavorito: Boolean,
+    cargarMiniatura: suspend (FileItem) -> ImageBitmap?,
     onClick: () -> Unit,
     onLongClick: () -> Unit
 ) {
@@ -449,13 +533,44 @@ private fun FileRow(
             Text(if (item.isDirectory) "Carpeta" else formatSize(item.size))
         },
         leadingContent = {
-            Text(item.type.icono, style = MaterialTheme.typography.headlineSmall)
+            if (item.type == FileType.IMAGE) {
+                Miniatura(item, cargarMiniatura)
+            } else {
+                Text(item.type.icono, style = MaterialTheme.typography.headlineSmall)
+            }
         },
         trailingContent = if (esFavorito) {
             { Text("⭐") }
         } else null,
         modifier = Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
     )
+}
+
+/** Miniatura de 44 dp; mientras carga muestra el ícono del tipo. */
+@Composable
+private fun Miniatura(item: FileItem, cargar: suspend (FileItem) -> ImageBitmap?) {
+    val imagen by produceState<ImageBitmap?>(null, item.path, item.lastModified) {
+        value = cargar(item)
+    }
+    Box(
+        contentAlignment = Alignment.Center,
+        modifier = Modifier
+            .size(44.dp)
+            .clip(RoundedCornerShape(8.dp))
+            .background(MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        val img = imagen
+        if (img != null) {
+            Image(
+                bitmap = img,
+                contentDescription = item.name,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Text(item.type.icono)
+        }
+    }
 }
 
 private fun formatSize(bytes: Long): String = when {
