@@ -51,7 +51,8 @@ Todas las aplicaciones implementan los dos temas institucionales, **Guinda (IPN)
 ```
 Practica-3/
 ├── README.md                      ← Este documento (informe técnico)
-├── AcercaDe_PC1.png               ← Especificaciones de la PC seleccionada
+├── AcercaDe_PC1.png               ← Especificaciones de la PC 1 (seleccionada)
+├── AcercaDe_PC2.png               ← Especificaciones de la PC 2
 ├── MacOS-Docker/
 │   ├── Reporte.md                 ← Guía paso a paso de instalación de macOS con Docker
 │   ├── assets/                    ← Capturas de apoyo de la guía
@@ -94,21 +95,24 @@ Se compararon las computadoras de ambos integrantes para decidir cuál tenía la
 
 | Característica | PC 1 — Brandon Velázquez (**seleccionada**) | PC 2 — Julio César Caballero |
 | :--- | :--- | :--- |
-| **CPU** | AMD Ryzen 7 5700G (8 núcleos / 16 hilos, 3.80 GHz) | Intel Core i5-1135G7 (4 núcleos / 8 hilos) |
-| **RAM** | 32 GB DDR4 (2133 MT/s) | 16 GB DDR4 |
-| **Almacenamiento** | 1 TB SSD (932 GB útiles) | 512 GB SSD |
-| **GPU** | AMD Radeon RX 6600 (8 GB) | NVIDIA GeForce MX350 |
-| **Sistema operativo** | Windows 11 Pro 25H2 (64 bits) | Windows |
-| **Tipo de equipo** | Escritorio | Laptop |
+| **Modelo** | Escritorio (tarjeta madre ASRock A520M) | Laptop ASUS ZenBook UX533FN |
+| **CPU** | AMD Ryzen 7 5700G (8 núcleos / 16 hilos, 3.80 GHz) | Intel Core i5-8265U (4 núcleos / 8 hilos, 1.60 GHz base) |
+| **RAM** | 32 GB DDR4 (2133 MT/s) | 8 GB DDR4 (2400 MT/s, 7.82 GB utilizables) |
+| **Almacenamiento** | 1 TB SSD (932 GB útiles, 847 GB libres) | 512 GB SSD (477 GB útiles, ≈319 GB libres) |
+| **GPU** | AMD Radeon RX 6600 (8 GB) | Gráficos integrados Intel + GPU dedicada de 2 GB |
+| **Sistema operativo** | Windows 11 Pro 25H2 (64 bits) | Windows 11 (64 bits) |
 
-**Justificación de la elección:** la PC 1 duplica la memoria RAM de la PC 2, lo que permitió asignar **16 GB exclusivamente a la máquina virtual** sin dejar sin recursos al sistema anfitrión (la PC 2 solo tiene 16 GB en total, que es el mínimo recomendado). Además, el Ryzen 7 tiene el doble de núcleos físicos, lo que permitió dedicar 6 núcleos a macOS, y el SSD de 1 TB tiene espacio suficiente para el disco virtual de 270 GB, macOS y Xcode (que por sí solo requiere más de 40 GB).
+**Justificación de la elección:** la RAM fue el factor decisivo. El repositorio recomienda 16 GB para virtualizar macOS; la PC 2 tiene solo 8 GB en total, por lo que no cumple el requisito mínimo, mientras que la PC 1 tiene 32 GB y permitió asignar **16 GB exclusivamente a la máquina virtual** sin dejar sin recursos al sistema anfitrión. Además, el Ryzen 7 tiene el doble de núcleos físicos y mayor frecuencia que el i5-8265U (un procesador de bajo consumo para laptop), lo que permitió dedicar 6 núcleos a macOS, y el SSD de 1 TB tiene espacio suficiente para el disco virtual de 270 GB, macOS y Xcode (que por sí solo requiere más de 40 GB).
 
 **Integrante responsable del entorno:** Velázquez Beltrán Brandon — Boleta 2023630925. La instalación se realizó únicamente en su computadora.
 
 **Mac física:** ningún integrante cuenta con una Mac física, por lo que se virtualizó macOS con Docker. No fue necesario unirse con otro equipo.
 
-![Especificaciones de la PC seleccionada](./AcercaDe_PC1.png)
-*Figura 1.1. Especificaciones de la PC 1 (Configuración → Sistema → Información de Windows 11).*
+| PC 1 — Brandon (seleccionada) | PC 2 — Julio |
+| :---: | :---: |
+| ![Especificaciones de la PC 1](./AcercaDe_PC1.png) | ![Especificaciones de la PC 2](./AcercaDe_PC2.png) |
+
+*Figura 1.1. Especificaciones de ambas PCs (Configuración → Sistema → Información de Windows).*
 
 ### 1.2 Trabajo en equipo
 
@@ -209,14 +213,12 @@ Para verificar el entorno se creó un proyecto de prueba en Swift/SwiftUI (plant
 
 ### 1.5 Entregables del Ejercicio 1
 
-- [x] Informe de especificaciones comparativas de las PCs del equipo
+- [x] Informe de especificaciones comparativas de las PCs del equipo, con capturas de ambas
 - [x] Guía paso a paso de la instalación con capturas ([`MacOS-Docker/Reporte.md`](./MacOS-Docker/Reporte.md) y sección 1.3)
 - [x] Capturas del entorno macOS funcionando y con acceso a Internet
 - [x] Xcode instalado y proyecto Swift de prueba ejecutándose en el simulador de iOS
 - [x] Registro del integrante responsable y justificación de la elección
 - [x] Bitácora de las sesiones de trabajo
-- [ ] Captura de especificaciones de la PC 2
-- [ ] Evidencia fotográfica o captura de las reuniones (videollamada / pantalla compartida)
 - [ ] Captura de Homebrew, CocoaPods y Swift Package Manager instalados
 
 ---
@@ -523,7 +525,7 @@ El APK de *release* ya compilado se encuentra en [`androidApp/release/androidApp
 
 ## Bitácora de trabajo
 
-**Responsable del equipo utilizado:** Velázquez Beltrán Brandon (boleta 2023630925), PC con Ryzen 7 5700G y 32 GB de RAM. Se eligió por tener el doble de RAM y de núcleos que la otra PC (ver sección 1.1).
+**Responsable del equipo utilizado:** Velázquez Beltrán Brandon (boleta 2023630925), PC con Ryzen 7 5700G y 32 GB de RAM. Se eligió porque es la única del equipo que cumple el mínimo de 16 GB de RAM para virtualizar macOS (la otra tiene 8 GB) y tiene el doble de núcleos (ver sección 1.1).
 
 Horarios reconstruidos a partir del historial de commits del repositorio (hora del centro de México).
 
